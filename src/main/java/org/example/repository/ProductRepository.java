@@ -1,6 +1,5 @@
 package org.example.repository;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -18,21 +17,24 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProductRepository {
 
-    @Autowired
-    private NamedParameterJdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     private static final String PRODUCT_NAME_BY_NAME_SCRIPT = "product_name_by_name.sql";
 
+    public ProductRepository(NamedParameterJdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
     public String getProductName(String name) {
-        String sql = read(PRODUCT_NAME_BY_NAME_SCRIPT);
+        String sql = read();
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("name", name);
         List<String> productNames = jdbcTemplate.queryForList(sql, params, String.class);
         return productNames.isEmpty() ? null : productNames.get(0);
     }
 
-    private static String read(String scriptFileName) {
-        try (InputStream is = new ClassPathResource(scriptFileName).getInputStream();
+    private static String read() {
+        try (InputStream is = new ClassPathResource(ProductRepository.PRODUCT_NAME_BY_NAME_SCRIPT).getInputStream();
              BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is))) {
             return bufferedReader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
